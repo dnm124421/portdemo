@@ -8,7 +8,7 @@ export const AerialValleyTerrain: React.FC = () => {
 
   // Generate top-down aerial river valley terrain
   const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(120, 140, 160, 180);
+    const geo = new THREE.PlaneGeometry(130, 150, 180, 200);
     const pos = geo.attributes.position;
 
     for (let i = 0; i < pos.count; i++) {
@@ -16,19 +16,19 @@ export const AerialValleyTerrain: React.FC = () => {
       const y = pos.getY(i);
 
       // Winding river path along Y
-      const riverCenter = Math.sin(y * 0.08) * 8 + Math.cos(y * 0.04) * 4;
+      const riverCenter = Math.sin(y * 0.08) * 9 + Math.cos(y * 0.04) * 5;
       const distFromRiver = Math.abs(x - riverCenter);
 
       // Valley banks rise away from river
       let elevation = Math.pow(distFromRiver * 0.12, 1.8);
 
       // Add hill noise
-      const n = Math.sin(x * 0.15 + y * 0.12) * 2.2 + Math.cos(x * 0.3 - y * 0.2) * 1.2;
+      const n = Math.sin(x * 0.15 + y * 0.12) * 2.5 + Math.cos(x * 0.3 - y * 0.2) * 1.5;
       elevation += n;
 
       // Flatten riverbed
-      if (distFromRiver < 3.5) {
-        elevation = -0.5 - (3.5 - distFromRiver) * 0.4;
+      if (distFromRiver < 4.0) {
+        elevation = -0.6 - (4.0 - distFromRiver) * 0.4;
       }
 
       pos.setZ(i, elevation);
@@ -42,11 +42,13 @@ export const AerialValleyTerrain: React.FC = () => {
     return {
       uniforms: {
         uTime: { value: 0 },
-        uRiverColor: { value: new THREE.Color('#38bdf8') },
-        uValleyGreen: { value: new THREE.Color('#2d6a4f') },
-        uHillGreen: { value: new THREE.Color('#52b788') },
-        uSandColor: { value: new THREE.Color('#d4a373') },
-        uLightPosition: { value: new THREE.Vector3(5, 25, 10) },
+        uRiverColor: { value: new THREE.Color('#0284c7') }, // Sparkling Cerulean Blue
+        uRiverGlint: { value: new THREE.Color('#38bdf8') }, // Bright Cyan Ripple
+        uSandColor: { value: new THREE.Color('#eab308') }, // Golden Shore Sand
+        uValleyGreen: { value: new THREE.Color('#16a34a') }, // Emerald Grass
+        uHillGreen: { value: new THREE.Color('#22c55e') }, // Vibrant Forest Canopy Green
+        uDeepForest: { value: new THREE.Color('#14532d') }, // Deep Pine Shade
+        uLightPosition: { value: new THREE.Vector3(8, 30, 15) },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -65,9 +67,11 @@ export const AerialValleyTerrain: React.FC = () => {
       `,
       fragmentShader: `
         uniform vec3 uRiverColor;
+        uniform vec3 uRiverGlint;
+        uniform vec3 uSandColor;
         uniform vec3 uValleyGreen;
         uniform vec3 uHillGreen;
-        uniform vec3 uSandColor;
+        uniform vec3 uDeepForest;
         uniform vec3 uLightPosition;
         uniform float uTime;
 
@@ -79,27 +83,29 @@ export const AerialValleyTerrain: React.FC = () => {
         void main() {
           vec3 lightDir = normalize(uLightPosition);
           float diff = max(dot(vNormal, lightDir), 0.0);
-          float toonLight = smoothstep(0.1, 0.2, diff) * 0.35 + smoothstep(0.45, 0.55, diff) * 0.45 + 0.2;
+          float toonLight = smoothstep(0.1, 0.25, diff) * 0.4 + smoothstep(0.5, 0.65, diff) * 0.4 + 0.3;
 
           vec3 baseColor;
           
-          // River water
+          // River water with animated wave ripples and glints
           if (vElevation < -0.2) {
-            float wave = sin(vWorldPosition.x * 2.0 + uTime * 2.0) * cos(vWorldPosition.y * 2.0 + uTime * 1.5) * 0.1;
-            baseColor = uRiverColor + wave;
-            // Water glint
-            float spec = pow(max(dot(vNormal, lightDir), 0.0), 32.0);
-            baseColor += vec3(1.0) * spec * 0.8;
-          } else if (vElevation < 0.6) {
-            // River sand / shore
-            baseColor = mix(uSandColor, uValleyGreen, smoothstep(-0.2, 0.6, vElevation));
+            float wave = sin(vWorldPosition.x * 2.5 + uTime * 2.5) * cos(vWorldPosition.y * 2.5 + uTime * 2.0) * 0.15;
+            baseColor = mix(uRiverColor, uRiverGlint, wave + 0.3);
+            
+            // Water glint specular highlight
+            float spec = pow(max(dot(vNormal, lightDir), 0.0), 24.0);
+            baseColor += vec3(0.9, 0.98, 1.0) * spec * 0.9;
+          } else if (vElevation < 0.8) {
+            // Shoreline golden sand transition
+            baseColor = mix(uSandColor, uValleyGreen, smoothstep(-0.2, 0.8, vElevation));
           } else {
-            // Grass & forest hills
-            baseColor = mix(uValleyGreen, uHillGreen, smoothstep(0.6, 6.0, vElevation));
+            // Emerald grass valley -> Vibrant forest canopy -> Deep pine hills
+            baseColor = mix(uValleyGreen, uHillGreen, smoothstep(0.8, 4.0, vElevation));
+            baseColor = mix(baseColor, uDeepForest, smoothstep(4.0, 7.5, vElevation));
           }
 
-          // Subtle painterly canopy texture
-          float canopy = sin(vUv.x * 150.0) * sin(vUv.y * 150.0) * 0.04;
+          // Foliage canopy micro texture
+          float canopy = sin(vUv.x * 160.0) * sin(vUv.y * 160.0) * 0.05;
           baseColor += canopy;
 
           gl_FragColor = vec4(baseColor * toonLight, 1.0);

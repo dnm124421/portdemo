@@ -18,7 +18,7 @@ export const MountainTerrain: React.FC<{ scrollProgress?: number }> = () => {
 
   // Generate displaced terrain geometry with central peak and detailed ridges
   const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(80, 80, 160, 160);
+    const geo = new THREE.PlaneGeometry(90, 90, 180, 180);
     const pos = geo.attributes.position;
     
     for (let i = 0; i < pos.count; i++) {
@@ -27,12 +27,12 @@ export const MountainTerrain: React.FC<{ scrollProgress?: number }> = () => {
 
       // Distance from center for peak elevation
       const distFromCenter = Math.sqrt(x * x + y * y);
-      const peakFactor = Math.exp(-distFromCenter * distFromCenter * 0.003) * 11.5;
+      const peakFactor = Math.exp(-distFromCenter * distFromCenter * 0.0025) * 12.5;
 
       // Ridge detail
-      const n1 = noise2D(x * 0.2, y * 0.2) * 2.5;
-      const n2 = noise2D(x * 0.6, y * 0.6) * 0.8;
-      const n3 = noise2D(x * 1.8, y * 1.8) * 0.3; // Micro close-up texture
+      const n1 = noise2D(x * 0.18, y * 0.18) * 3.0;
+      const n2 = noise2D(x * 0.5, y * 0.5) * 1.0;
+      const n3 = noise2D(x * 1.6, y * 1.6) * 0.35; // Micro close-up texture
 
       const elevation = peakFactor + n1 + n2 + n3;
       pos.setZ(i, elevation);
@@ -42,37 +42,44 @@ export const MountainTerrain: React.FC<{ scrollProgress?: number }> = () => {
     return geo;
   }, []);
 
-  // Custom painterly shader material for mountain terrain
+  // Custom painterly shader material with rich, vibrant colors
   const shaderArgs = useMemo(() => {
     return {
       uniforms: {
         uTime: { value: 0 },
-        uSkyColor: { value: new THREE.Color('#3b82f6') },
-        uRockColor: { value: new THREE.Color('#3a4a58') },
-        uMossColor: { value: new THREE.Color('#4c7057') },
-        uSnowColor: { value: new THREE.Color('#e2e8f0') },
-        uLightPosition: { value: new THREE.Vector3(12, 20, 15) },
+        uSkyColor: { value: new THREE.Color('#38bdf8') }, // Vivid Sky Blue
+        uValleyGreen: { value: new THREE.Color('#15803d') }, // Vibrant Forest Moss Green
+        uRockColor: { value: new THREE.Color('#78350f') }, // Rich Terracotta Rock
+        uHighRockColor: { value: new THREE.Color('#475569') }, // Slate Ridge
+        uSnowColor: { value: new THREE.Color('#f8fafc') }, // Crisp Pure Snow
+        uSunColor: { value: new THREE.Color('#fef08a') }, // Warm Sunlight Glint
+        uLightPosition: { value: new THREE.Vector3(15, 25, 20) },
       },
       vertexShader: `
         varying vec2 vUv;
         varying float vElevation;
         varying vec3 vNormal;
         varying vec3 vViewPosition;
+        varying vec3 vWorldPosition;
 
         void main() {
           vUv = uv;
           vElevation = position.z;
           vNormal = normalize(normalMatrix * normal);
-          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          vec4 worldPos = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPos.xyz;
+          vec4 mvPosition = viewMatrix * worldPos;
           vViewPosition = -mvPosition.xyz;
           gl_Position = projectionMatrix * mvPosition;
         }
       `,
       fragmentShader: `
         uniform vec3 uSkyColor;
+        uniform vec3 uValleyGreen;
         uniform vec3 uRockColor;
-        uniform vec3 uMossColor;
+        uniform vec3 uHighRockColor;
         uniform vec3 uSnowColor;
+        uniform vec3 uSunColor;
         uniform vec3 uLightPosition;
         uniform float uTime;
 
@@ -80,30 +87,36 @@ export const MountainTerrain: React.FC<{ scrollProgress?: number }> = () => {
         varying float vElevation;
         varying vec3 vNormal;
         varying vec3 vViewPosition;
+        varying vec3 vWorldPosition;
 
         void main() {
-          // Light direction
           vec3 lightDir = normalize(uLightPosition);
           float diff = max(dot(vNormal, lightDir), 0.0);
           
-          // Toon / Painterly light stepping
-          float toonLight = smoothstep(0.1, 0.15, diff) * 0.4 + smoothstep(0.5, 0.55, diff) * 0.4 + 0.2;
+          // Toon / Painterly light stepping for artistic contrast
+          float toonLight = smoothstep(0.05, 0.15, diff) * 0.35 + smoothstep(0.45, 0.6, diff) * 0.45 + 0.3;
 
-          // Height based gradient (Moss at bottom, Rock in middle, Snow on peak)
-          vec3 baseColor = mix(uMossColor, uRockColor, smoothstep(1.5, 5.0, vElevation));
+          // Height-based color layering (Lush green valley -> Terracotta cliff -> Slate ridge -> Snow peak)
+          vec3 baseColor = uValleyGreen;
+          baseColor = mix(baseColor, uRockColor, smoothstep(1.5, 4.5, vElevation));
+          baseColor = mix(baseColor, uHighRockColor, smoothstep(4.5, 8.0, vElevation));
           baseColor = mix(baseColor, uSnowColor, smoothstep(8.5, 11.5, vElevation));
 
-          // Detail noise pattern for close-up texture
-          float detailNoise = sin(vUv.x * 120.0) * cos(vUv.y * 120.0) * 0.06;
+          // Detail noise pattern for close-up texture richness
+          float detailNoise = sin(vUv.x * 140.0) * cos(vUv.y * 140.0) * 0.05;
           baseColor += detailNoise;
 
-          // Final shaded color
-          vec3 finalColor = baseColor * toonLight;
+          // Warm Sunlight Specular Highlights on snow & ridges
+          float spec = pow(max(dot(reflect(-lightDir, vNormal), normalize(vViewPosition)), 0.0), 16.0);
+          vec3 specular = uSunColor * spec * 0.3 * smoothstep(7.0, 12.0, vElevation);
 
-          // Rim / Atmospheric haze on peak edges
+          // Final shaded color
+          vec3 finalColor = baseColor * toonLight + specular;
+
+          // Atmospheric Sky Rim Glow
           float rim = 1.0 - max(dot(normalize(vViewPosition), vNormal), 0.0);
-          rim = pow(rim, 4.0);
-          finalColor += uSkyColor * rim * 0.25;
+          rim = pow(rim, 3.5);
+          finalColor += uSkyColor * rim * 0.3;
 
           gl_FragColor = vec4(finalColor, 1.0);
         }

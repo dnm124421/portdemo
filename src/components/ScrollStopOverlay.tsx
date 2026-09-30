@@ -11,11 +11,20 @@ interface ScrollStopOverlayProps {
   onScrollDown: () => void;
 }
 
-// Flat solid colors for Part B Slide Cards (no gradient, calm & muted)
-const slideCardColors: Record<number, { bg: string; textColor: string }> = {
-  1: { bg: '#8f8ae0', textColor: '#ffffff' }, // Stop 1 (About Me) - Solid Periwinkle Purple
-  3: { bg: '#5f8d76', textColor: '#ffffff' }, // Stop 3 (Experience) - Solid Muted Sage Green
-  5: { bg: '#6c5b7b', textColor: '#ffffff' }, // Stop 5 (Education) - Solid Calm Dusk Rose
+// Translucent Glass Color Themes for Part B Slide Cards (Keeps 3D terrain visible underneath!)
+const slideCardThemes: Record<number, { bgClass: string; accentColor: string }> = {
+  1: {
+    bgClass: 'bg-[#6b66c9]/45 backdrop-blur-md border border-white/15', // Stop 1 (About Me) - Glass Periwinkle Purple
+    accentColor: '#c084fc',
+  },
+  3: {
+    bgClass: 'bg-[#3b6e56]/45 backdrop-blur-md border border-white/15', // Stop 3 (Experience) - Glass Muted Sage Green
+    accentColor: '#4ade80',
+  },
+  5: {
+    bgClass: 'bg-[#5b4a6b]/45 backdrop-blur-md border border-white/15', // Stop 5 (Education) - Glass Calm Dusk Rose
+    accentColor: '#f472b6',
+  },
 };
 
 export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
@@ -28,24 +37,23 @@ export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
   if (!currentStop) return null;
 
   const isHero = currentStop.sectionKey === 'hero';
-  const isSlideCard = activeIndex in slideCardColors;
-  const slideStyle = slideCardColors[activeIndex];
+  const isSlideCard = activeIndex in slideCardThemes;
+  const slideTheme = slideCardThemes[activeIndex];
 
   return (
     <div className="fixed inset-0 pointer-events-none z-30 flex items-center justify-center">
       {/* ------------------------------------------------------------- */}
-      {/* PART B: FULL-SCREEN FLAT SOLID COLOR TRANSITION SLIDE CARD    */}
+      {/* PART B: TRANSLUCENT GLASS COLOR SLIDE CARDS (3D STAYS VISIBLE) */}
       {/* ------------------------------------------------------------- */}
       <AnimatePresence mode="wait">
-        {isSlideCard && slideStyle && (
+        {isSlideCard && slideTheme && (
           <motion.div
             key={`slide-card-${activeIndex}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute inset-0 pointer-events-auto flex flex-col items-center justify-center text-center p-6 md:p-12 z-40"
-            style={{ backgroundColor: slideStyle.bg }}
+            className={`absolute inset-0 pointer-events-auto flex flex-col items-center justify-center text-center p-6 md:p-12 z-40 ${slideTheme.bgClass}`}
           >
             <div className="flex flex-col items-center max-w-2xl select-none">
               {/* Micro Eyebrow Label */}
@@ -53,7 +61,7 @@ export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="font-mono text-xs md:text-sm tracking-[0.3em] uppercase text-white/80 mb-3"
+                className="font-mono text-xs md:text-sm tracking-[0.3em] uppercase text-white/90 mb-3 drop-shadow-md"
               >
                 {currentStop.kicker || 'WHERE INSIGHT —'}
               </motion.span>
@@ -63,7 +71,7 @@ export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
                 initial={{ opacity: 0, y: 25 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="font-serif text-6xl sm:text-7xl md:text-9xl text-white tracking-tight font-light mb-6"
+                className="font-serif text-6xl sm:text-7xl md:text-9xl text-white tracking-tight font-light mb-6 drop-shadow-[0_10px_30px_rgba(0,0,0,0.6)]"
               >
                 {currentStop.title}
               </motion.h2>
@@ -73,7 +81,7 @@ export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.35 }}
-                className="font-sans text-base md:text-xl text-white/90 font-light leading-relaxed max-w-lg mb-8"
+                className="font-sans text-base md:text-xl text-white/95 font-light leading-relaxed max-w-lg mb-8 drop-shadow-md"
               >
                 {currentStop.description}
               </motion.p>
@@ -85,7 +93,7 @@ export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
                 transition={{ duration: 0.5, delay: 0.5 }}
                 className="mb-8"
               >
-                <div className="w-4 h-4 rotate-45 border-2 border-white/80 bg-white/20" />
+                <div className="w-5 h-5 rotate-45 border-2 border-white/90 bg-white/30 shadow-lg" />
               </motion.div>
 
               {/* Glass CTA Button */}
@@ -94,7 +102,7 @@ export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.6 }}
                 onClick={() => onExplore(currentStop.sectionKey)}
-                className="glass-pill group relative flex items-center gap-4 px-7 py-3 rounded-full text-white font-medium text-sm md:text-base cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105"
+                className="glass-pill group relative flex items-center gap-4 px-7 py-3 rounded-full text-white font-medium text-sm md:text-base cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105 shadow-xl"
               >
                 <span className="tracking-wider">{currentStop.buttonText || 'Know More →'}</span>
                 <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all duration-300">
@@ -123,15 +131,15 @@ export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
               /* --- PART A: HERO OVERLAY --- */
               <div className="flex flex-col items-center max-w-4xl px-4 select-none">
                 {/* Top Center Kicker */}
-                <div className="mb-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border-white/10 text-brand-accent font-mono text-xs md:text-sm tracking-[0.25em] uppercase">
+                <div className="mb-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border-white/10 text-brand-accent font-mono text-xs md:text-sm tracking-[0.25em] uppercase shadow-lg">
                   <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse" />
                   {currentStop.kicker}
                 </div>
 
-                {/* Subtitle / Location (Title "Dhruv" is rendered in 3D in R3F Canvas!) */}
+                {/* Subtitle / Location (Title "Dhruv" is rendered in 3D inside the R3F Canvas!) */}
                 <div className="h-44 md:h-56" /> {/* Placeholder spacing for 3D text */}
 
-                <p className="font-sans text-sm md:text-base text-white/70 tracking-widest uppercase mb-10">
+                <p className="font-sans text-sm md:text-base text-white/80 tracking-widest uppercase mb-10 drop-shadow-md">
                   {currentStop.subtitle}
                 </p>
 
@@ -141,11 +149,11 @@ export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
                   className="group flex flex-col items-center gap-2 cursor-pointer focus:outline-none"
                   aria-label="Scroll down to start"
                 >
-                  <span className="font-sans text-xs md:text-sm tracking-[0.2em] text-white/80 uppercase group-hover:text-brand-accent transition-colors duration-300 animate-pulse-subtle">
+                  <span className="font-sans text-xs md:text-sm tracking-[0.2em] text-white/90 uppercase group-hover:text-brand-accent transition-colors duration-300 animate-pulse-subtle drop-shadow-md">
                     {currentStop.description}
                   </span>
                   <div className="w-8 h-8 rounded-full glass-panel flex items-center justify-center group-hover:border-brand-accent transition-colors duration-300">
-                    <ChevronDown className="w-4 h-4 text-white/80 group-hover:translate-y-0.5 transition-transform duration-300" />
+                    <ChevronDown className="w-4 h-4 text-white/90 group-hover:translate-y-0.5 transition-transform duration-300" />
                   </div>
                 </button>
               </div>
@@ -158,16 +166,16 @@ export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
                 </div>
 
                 {/* Section Number / Kicker */}
-                <span className="font-mono text-xs md:text-sm tracking-[0.3em] uppercase text-brand-accent/90 mb-2">
+                <span className="font-mono text-xs md:text-sm tracking-[0.3em] uppercase text-brand-accent mb-2 drop-shadow-md">
                   {currentStop.kicker}
                 </span>
 
                 {/* Large Serif Title (Supports "Live | Projects" vertical divider style) */}
-                <h2 className="font-serif text-5xl sm:text-6xl md:text-8xl text-white tracking-tight font-light drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] mb-4 flex items-center gap-3">
+                <h2 className="font-serif text-5xl sm:text-6xl md:text-8xl text-white tracking-tight font-light drop-shadow-[0_10px_35px_rgba(0,0,0,0.85)] mb-4 flex items-center gap-3">
                   {currentStop.sectionKey === 'projects' ? (
                     <>
-                      <span className="text-white/60">Live</span>
-                      <span className="w-[1px] h-10 md:h-16 bg-white/40 inline-block" />
+                      <span className="text-white/70">Live</span>
+                      <span className="w-[1px] h-10 md:h-16 bg-white/50 inline-block" />
                       <span>Projects</span>
                     </>
                   ) : (
@@ -176,14 +184,14 @@ export const ScrollStopOverlay: React.FC<ScrollStopOverlayProps> = ({
                 </h2>
 
                 {/* Short Description */}
-                <p className="font-sans text-base md:text-xl text-white/85 max-w-xl font-light leading-relaxed mb-8 drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                <p className="font-sans text-base md:text-xl text-white/90 max-w-xl font-light leading-relaxed mb-8 drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">
                   {currentStop.description}
                 </p>
 
                 {/* Transparent Glassmorphic CTA Button */}
                 <button
                   onClick={() => onExplore(currentStop.sectionKey)}
-                  className="glass-pill group relative flex items-center gap-4 px-7 py-3 rounded-full text-white font-medium text-sm md:text-base cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105"
+                  className="glass-pill group relative flex items-center gap-4 px-7 py-3 rounded-full text-white font-medium text-sm md:text-base cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105 shadow-2xl"
                 >
                   <span className="tracking-wider">{currentStop.buttonText || 'Explore →'}</span>
                   <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-brand-accent group-hover:text-black transition-all duration-300">
