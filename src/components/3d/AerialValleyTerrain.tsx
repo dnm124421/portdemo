@@ -99,7 +99,7 @@ export const AerialValleyTerrain: React.FC = () => {
           }
 
           // Subtle painterly canopy texture
-          float canopy = sin(vUv.x * 150.0) * Math.sin(vUv.y * 150.0) * 0.04;
+          float canopy = sin(vUv.x * 150.0) * sin(vUv.y * 150.0) * 0.04;
           baseColor += canopy;
 
           gl_FragColor = vec4(baseColor * toonLight, 1.0);

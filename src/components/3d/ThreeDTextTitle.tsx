@@ -27,7 +27,6 @@ export const ThreeDTextTitle: React.FC<{ scrollProgress: number }> = ({ scrollPr
     <group ref={textGroupRef} position={[0, 1.0, 4.0]}>
       {/* Main 3D Serif Text "Dhruv" */}
       <Text
-        font="https://fonts.gstatic.com/s/cormorantgaramond/v19/allU-BADWXYvhGDUd43wR82s67Mpx4h0.woff"
         fontSize={2.6}
         letterSpacing={-0.02}
         lineHeight={1}
