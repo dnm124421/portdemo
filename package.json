@@ -9,7 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^9.120.0",
+    "@react-three/fiber": "^8.17.10",
     "clsx": "^2.1.1",
+    "framer-motion": "^13.4.6",
     "gsap": "^3.12.5",
     "lenis": "^1.1.18",
     "lucide-react": "^0.475.0",
